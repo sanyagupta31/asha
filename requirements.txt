@@ -1,0 +1,44 @@
+# --- Core Python Libraries ---
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+
+# --- LLM/RAG & Embeddings ---
+sentence-transformers
+faiss-cpu
+
+# --- NLP & Bias Detection ---
+spacy
+spacy-lookups-data
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+nltk
+
+# --- Cryptography & Security ---
+cryptography
+
+# --- API Integrations ---
+requests
+
+# --- Data Handling ---
+pandas
+numpy
+
+# --- Logging & Monitoring ---
+loguru
+
+# --- Optional: For Testing & Analytics ---
+pytest
+httpx
+
+# --- For Groq API ---
+groq
+
+# --- For OpenAI API (if needed for fallback or comparison) ---
+openai
+
+# --- (Optional) For Feedback/Analytics Dashboard ---
+streamlit
+
+# --- (Optional) For CORS if you connect to a frontend ---
+fastapi[all]
