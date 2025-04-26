@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Opportunities - Asha AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6d2177;
+            --secondary-color: #ff69b4;
+            --light-pink: #f7d3e3;
+            --lighter-pink: #fef0f8;
+            --white: #ffffff;
+            --dark-text: #333333;
+            --light-text: #555555;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #fef8fc;
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+        
+        .navbar {
+            background-color: #f7d3e3;
+            padding: 2rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a {
+            color: #6d2177;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logo:hover {
+            color: var(--secondary-color);
+            transform: scale(1.05);
+        }
+        
+        .browse-hero {
+            background: linear-gradient(135deg, var(--light-pink), var(--secondary-color));
+            color: var(--white);
+            text-align: center;
+            padding: 5rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .browse-hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .browse-hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .browse-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('static/women.jpg');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.1;
+        }
+        
+        .browse-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        .browse-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--primary-color);
+            font-size: 2.2rem;
+            position: relative;
+        }
+        
+        .browse-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background-color: var(--secondary-color);
+            border-radius: 2px;
+        }
+        
+        .filter-section {
+            background-color: var(--white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            margin-bottom: 3rem;
+        }
+        
+        .filter-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 2px solid var(--light-pink);
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.2);
+        }
+        
+        .filter-btn {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            align-self: flex-end;
+        }
+        
+        .filter-btn:hover {
+            background-color: #ff1493;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4);
+        }
+        
+        .opportunities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .opportunity-card {
+            background-color: var(--white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+        
+        .opportunity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .opportunity-image {
+            height: 180px;
+            background-color: var(--light-pink);
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .opportunity-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .opportunity-content {
+            padding: 1.5rem;
+        }
+        
+        .opportunity-title {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+        
+        .opportunity-company {
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .opportunity-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: var(--light-text);
+        }
+        
+        .opportunity-meta i {
+            margin-right: 0.3rem;
+            color: var(--secondary-color);
+        }
+        
+        .opportunity-desc {
+            color: var(--light-text);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .opportunity-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .opportunity-link {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 0.5rem 1.2rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .opportunity-link:hover {
+            background-color: #ff1493;
+            transform: translateY(-2px);
+        }
+        
+        .opportunity-save {
+            color: var(--secondary-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .opportunity-save:hover {
+            color: #ff1493;
+            transform: scale(1.1);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 3rem;
+        }
+        
+        .pagination-btn {
+            background-color: var(--white);
+            color: var(--primary-color);
+            border: 1px solid var(--light-pink);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .pagination-btn.active,
+        .pagination-btn:hover {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            border-color: var(--secondary-color);
+        }
+        
+        .pagination-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .footer {
+            background-color: var(--light-pink);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--primary-color);
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .social-links a {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            color: var(--secondary-color);
+            transform: translateY(-3px);
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .navbar-links {
+                display: flex;
+                gap: 1rem;
+            }
+            
+            .browse-hero {
+                padding: 4rem 1.5rem;
+            }
+            
+            .browse-hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .browse-hero p {
+                font-size: 1rem;
+            }
+            
+            .browse-container {
+                padding: 2rem 1.5rem;
+            }
+            
+            .browse-title {
+                font-size: 1.8rem;
+            }
+            
+            .filter-form {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .browse-hero h1 {
+                font-size: 1.8rem;
+            }
+            
+            .navbar-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .navbar a {
+                margin: 0.5rem;
+            }
+            
+            .opportunity-actions {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .opportunity-link {
+                width: 100%;
+                text-align: center;
+            }
+        }
+        
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .opportunity-card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .opportunity-card:nth-child(1) { animation-delay: 0.1s; }
+        .opportunity-card:nth-child(2) { animation-delay: 0.2s; }
+        .opportunity-card:nth-child(3) { animation-delay: 0.3s; }
+        .opportunity-card:nth-child(4) { animation-delay: 0.4s; }
+        .opportunity-card:nth-child(5) { animation-delay: 0.5s; }
+        .opportunity-card:nth-child(6) { animation-delay: 0.6s; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <span>Asha AI 🎀🤖</span>
+        </div>
+        <div class="navbar-links">
+            <a href="/"><i class="fas fa-home"></i> Home</a>
+            <a href="/chat"><i class="fas fa-comments"></i> Chat</a>
+            <a href="/faq"><i class="fas fa-question-circle"></i> FAQ</a>
+        </div>
+    </nav>
+    
+    <section class="browse-hero">
+        <h1>Browse Opportunities</h1>
+        <p>Discover jobs, mentorships, and events tailored for women in tech and other industries</p>
+    </section>
+    
+    <section class="browse-container">
+        <h2 class="browse-title">Find Your Next Opportunity</h2>
+        
+        <div class="filter-section">
+            <form class="filter-form">
+                <div class="form-group">
+                    <label for="search">Keywords</label>
+                    <input type="text" id="search" placeholder="Job title, skills, etc.">
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" placeholder="City or remote">
+                </div>
+                
+                <div class="form-group">
+                    <label for="type">Opportunity Type</label>
+                    <select id="type">
+                        <option value="">All Types</option>
+                        <option value="job">Full-time Job</option>
+                        <option value="internship">Internship</option>
+                        <option value="mentorship">Mentorship</option>
+                        <option value="event">Event</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="filter-btn">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </form>
+        </div>
+        
+        <div class="opportunities-grid">
+            <div class="opportunity-card">
+                <div class="opportunity-image" style="background-image: url('static/lap.jpg');">
+                    <span class="opportunity-badge">Full-time</span>
+                </div>
+                <div class="opportunity-content">
+                    <h3 class="opportunity-title">Frontend Developer</h3>
+                    <div class="opportunity-company">Tech Solutions Inc.</div>
+                    <div class="opportunity-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Bangalore</span>
+                        <span><i class="fas fa-money-bill-wave"></i> ₹8-12 LPA</span>
+                    </div>
+                    <p class="opportunity-desc">
+                        We're looking for a skilled Frontend Developer with 2+ years of experience in React.js to join our growing team. You'll work on exciting projects for global clients.
+                    </p>
+                    <div class="opportunity-actions">
+                        <a href="#" class="opportunity-link">View Details</a>
+                        <i class="far fa-bookmark opportunity-save"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="opportunity-card">
+                <div class="opportunity-image" style="background-image: url('static/women.jpg');">
+                    <span class="opportunity-badge">Mentorship</span>
+                </div>
+                <div class="opportunity-content">
+                    <h3 class="opportunity-title">Women in Tech Mentorship</h3>
+                    <div class="opportunity-company">SheBuilds Community</div>
+                    <div class="opportunity-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Remote</span>
+                        <span><i class="fas fa-clock"></i> 3 months</span>
+                    </div>
+                    <p class="opportunity-desc">
+                        Join our mentorship program connecting women in tech with experienced professionals for career guidance, skill development, and networking opportunities.
+                    </p>
+                    <div class="opportunity-actions">
+                        <a href="#" class="opportunity-link">Learn More</a>
+                        <i class="far fa-bookmark opportunity-save"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="opportunity-card">
+                <div class="opportunity-image" style="background-image: url('static/girl.jpg');">
+                    <span class="opportunity-badge">Event</span>
+                </div>
+                <div class="opportunity-content">
+                    <h3 class="opportunity-title">Women in AI Conference</h3>
+                    <div class="opportunity-company">AI For Good Foundation</div>
+                    <div class="opportunity-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Delhi</span>
+                        <span><i class="fas fa-calendar-alt"></i> 15 Nov 2025</span>
+                    </div>
+                    <p class="opportunity-desc">
+                        Annual conference bringing together women leaders in artificial intelligence for talks, workshops, and networking. Early bird tickets available until Oct 30.
+                    </p>
+                    <div class="opportunity-actions">
+                        <a href="#" class="opportunity-link">Register Now</a>
+                        <i class="far fa-bookmark opportunity-save"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="opportunity-card">
+                <div class="opportunity-image" style="background-image: url('static/logo.png');">
+                    <span class="opportunity-badge">Internship</span>
+                </div>
+                <div class="opportunity-content">
+                    <h3 class="opportunity-title">UX Design Intern</h3>
+                    <div class="opportunity-company">Digital Creations</div>
+                    <div class="opportunity-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Mumbai</span>
+                        <span><i class="fas fa-money-bill-wave"></i> Stipend</span>
+                    </div>
+                    <p class="opportunity-desc">
+                        6-month internship for design students to work on real client projects. Learn UX research, prototyping, and design systems from our experienced team.
+                    </p>
+                    <div class="opportunity-actions">
+                        <a href="#" class="opportunity-link">Apply Now</a>
+                        <i class="far fa-bookmark opportunity-save"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="opportunity-card">
+                <div class="opportunity-image" style="background-image: url('static/Untitled design.png');">
+                    <span class="opportunity-badge">Full-time</span>
+                </div>
+                <div class="opportunity-content">
+                    <h3 class="opportunity-title">Backend Engineer</h3>
+                    <div class="opportunity-company">Cloud Innovations</div>
+                    <div class="opportunity-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Remote</span>
+                        <span><i class="fas fa-money-bill-wave"></i> ₹10-15 LPA</span>
+                    </div>
+                    <p class="opportunity-desc">
+                        Seeking a Backend Engineer with Node.js/Python experience to develop scalable microservices. Opportunity to work on cutting-edge cloud technologies.
+                    </p>
+                    <div class="opportunity-actions">
+                        <a href="#" class="opportunity-link">View Details</a>
+                        <i class="far fa-bookmark opportunity-save"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="opportunity-card">
+                <div class="opportunity-image" style="background-image: url('static/lap.jpg');">
+                    <span class="opportunity-badge">Workshop</span>
+                </div>
+                <div class="opportunity-content">
+                    <h3 class="opportunity-title">Salary Negotiation Workshop</h3>
+                    <div class="opportunity-company">Career Growth Hub</div>
+                    <div class="opportunity-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> Online</span>
+                        <span><i class="fas fa-calendar-alt"></i> 25 Oct 2025</span>
+                    </div>
+                    <p class="opportunity-desc">
+                        Learn proven strategies to negotiate your salary with confidence. This interactive workshop includes role-playing exercises and personalized feedback.
+                    </p>
+                    <div class="opportunity-actions">
+                        <a href="#" class="opportunity-link">Join Workshop</a>
+                        <i class="far fa-bookmark opportunity-save"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="pagination">
+            <button class="pagination-btn disabled">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="pagination-btn active">1</button>
+            <button class="pagination-btn">2</button>
+            <button class="pagination-btn">3</button>
+            <button class="pagination-btn">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </section>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 SheBuilds. Empowering Women, Empowering Futures.</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // Filter form submission
+        document.querySelector('.filter-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Filters applied! (This would load new results in a real application)');
+        });
+        
+        // Save opportunity functionality
+        document.querySelectorAll('.opportunity-save').forEach(icon => {
+            icon.addEventListener('click', function() {
+                this.classList.toggle('fas');
+                this.classList.toggle('far');
+                if (this.classList.contains('fas')) {
+                    alert('Opportunity saved to your profile!');
+                }
+            });
+        });
+        
+        // Pagination functionality
+        document.querySelectorAll('.pagination-btn:not(.disabled)').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!this.classList.contains('active')) {
+                    document.querySelector('.pagination-btn.active').classList.remove('active');
+                    this.classList.add('active');
+                    alert('Loading page ' + this.textContent + '...');
+                }
+            });
+        });
+        
+        // Opportunity card animation on scroll
+        const opportunityCards = document.querySelectorAll('.opportunity-card');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        opportunityCards.forEach(card => {
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
