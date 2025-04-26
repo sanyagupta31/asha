@@ -42,3 +42,4 @@ streamlit
 
 # --- (Optional) For CORS if you connect to a frontend ---
 fastapi[all]
+bcrypt
