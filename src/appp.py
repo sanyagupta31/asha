@@ -1,15 +1,15 @@
-# src/appp.py (Final Production-Ready Version)
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import os
 import logging
 import re
+import sqlite3
+import bcrypt
 from dotenv import load_dotenv
 
-load_dotenv(override=True)  # Always reload .env
+load_dotenv(override=True) 
 
-# Check for all API keys
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "").strip()
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "").strip()
@@ -21,7 +21,33 @@ print(f"Loaded ADZUNA_APP_ID: {repr(ADZUNA_APP_ID)}")
 if not GROQ_API_KEY or not GROQ_API_KEY.startswith("gsk_"):
     raise ValueError("Invalid/Missing Groq API key in .env file")
 
-# Import modules AFTER env validation
+# Initialize SQLite database
+def init_db():
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+# Call the function to initialize the database when the app starts
+init_db()
+
+# Password hashing and verification
+def hash_password(password: str) -> str:
+    """Hash a password for storing."""
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verify a stored password against one provided by user."""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
 from src.context_manager import get_history, add_message, clear_history
 from src.ragi import get_context_for_query
 from src.ethical import analyze_ethical_concerns
@@ -30,14 +56,12 @@ from src.security import encrypt_data
 from src.analytics import log_analytics
 from groq import Groq
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("AshaAI")
 
-# Initialize Groq client
 try:
     client = Groq(
         api_key=GROQ_API_KEY,
@@ -47,7 +71,6 @@ except Exception as e:
     logger.critical("Groq client initialization failed: %s", str(e))
     raise RuntimeError("AI service initialization failed") from e
 
-# FastAPI app
 app = FastAPI(
     title="Asha AI Chatbot",
     description="Career assistant for women's professional growth",
@@ -56,7 +79,6 @@ app = FastAPI(
     redoc_url=None
 )
 
-# Data models
 class ChatRequest(BaseModel):
     session_id: str
     message: str
@@ -66,6 +88,15 @@ class FeedbackRequest(BaseModel):
     session_id: str
     rating: str
     comments: Optional[str] = None
+
+class SignupRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 # Ambiguity detection patterns
 AMBIGUOUS_TERMS = {
@@ -249,6 +280,81 @@ def error_response(session_id: str, error_msg: str) -> Dict:
         "history": get_history(session_id)
     }
 
+@app.post("/signup")
+async def handle_signup(request: SignupRequest):
+    """Signup endpoint"""
+    try:
+        # Check if user already exists
+        conn = sqlite3.connect("users.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE email = ?", (request.email,))
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            conn.close()
+            return {"success": False, "message": "Email already registered. Please log in."}
+
+        # Hash the password and store the user
+        hashed_password = hash_password(request.password)
+        cursor.execute(
+            "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+            (request.name, request.email, hashed_password)
+        )
+        conn.commit()
+        conn.close()
+
+        logger.info(f"User signed up: {request.email}")
+        log_analytics(
+            event_type="signup",
+            session_id=request.email,
+            details={"email": request.email}
+        )
+        return {"success": True, "message": "Signup successful! Please log in."}
+
+    except Exception as e:
+        logger.error(f"Signup error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process signup"
+        )
+
+@app.post("/login")
+async def handle_login(request: LoginRequest):
+    """Login endpoint"""
+    try:
+        # Check if user exists
+        conn = sqlite3.connect("users.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE email = ?", (request.email,))
+        user = cursor.fetchone()
+
+        if not user:
+            conn.close()
+            return {"success": False, "message": "Email not found. Please sign up."}
+
+        # Verify password
+        stored_password = user[3]  # Password is the 4th column (index 3)
+        if not verify_password(request.password, stored_password):
+            conn.close()
+            return {"success": False, "message": "Incorrect password. Please try again."}
+
+        conn.close()
+
+        logger.info(f"User logged in: {request.email}")
+        log_analytics(
+            event_type="login",
+            session_id=request.email,
+            details={"email": request.email}
+        )
+        return {"success": True, "message": "Login successful!"}
+
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process login"
+        )
+
 @app.post("/feedback")
 async def handle_feedback(request: FeedbackRequest):
     """Feedback endpoint"""
@@ -302,6 +408,6 @@ async def health_check():
         }
     }
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
