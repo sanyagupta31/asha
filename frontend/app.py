@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import uuid
 
-app = Flask(_name_)
+app = Flask(__name__)  # Fixed: Changed _name_ to __name__
 
 # Backend link
 BACKEND_URL = "http://localhost:8000"  
@@ -111,5 +111,5 @@ def test_backend():
             'message': 'Backend connection failed'
         }), 500
 
-if _name_ == '_main_':
+if __name__ == '__main__':  # Fixed: Changed _main_ to __main__
     app.run(debug=True, port=5000)
