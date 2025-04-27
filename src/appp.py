@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Request, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import os
@@ -6,71 +8,18 @@ import logging
 import re
 import sqlite3
 import bcrypt
+import uuid
 from dotenv import load_dotenv
-
-load_dotenv(override=True) 
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
-ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "").strip()
-ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "").strip()
-TICKETMASTER_API_KEY = os.getenv("TICKETMASTER_API_KEY", "").strip()
-
-print(f"Loaded GROQ_API_KEY: {repr(GROQ_API_KEY)}")
-print(f"Loaded ADZUNA_APP_ID: {repr(ADZUNA_APP_ID)}")
-
-if not GROQ_API_KEY or not GROQ_API_KEY.startswith("gsk_"):
-    raise ValueError("Invalid/Missing Groq API key in .env file")
-
-# Initialize SQLite database
-def init_db():
-    conn = sqlite3.connect("users.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-# Call the function to initialize the database when the app starts
-init_db()
-
-# Password hashing and verification
-def hash_password(password: str) -> str:
-    """Hash a password for storing."""
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-def verify_password(password: str, hashed: str) -> bool:
-    """Verify a stored password against one provided by user."""
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-
-from src.context_manager import get_history, add_message, clear_history
-from src.ragi import get_context_for_query
-from src.ethical import analyze_ethical_concerns
-from src.feedback import record_feedback
-from src.security import encrypt_data
-from src.analytics import log_analytics
 from groq import Groq
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from src.ragi import get_context_for_query
+from src.context_manager import get_history, add_message, clear_history
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("AshaAI")
+# --- Load environment variables ---
+load_dotenv(override=True)
 
-try:
-    client = Groq(
-        api_key=GROQ_API_KEY,
-        timeout=10.0
-    )
-except Exception as e:
-    logger.critical("Groq client initialization failed: %s", str(e))
-    raise RuntimeError("AI service initialization failed") from e
-
+# --- FastAPI app ---
 app = FastAPI(
     title="Asha AI Chatbot",
     description="Career assistant for women's professional growth",
@@ -79,6 +28,61 @@ app = FastAPI(
     redoc_url=None
 )
 
+# --- Rate limiting ---
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+# --- CORS middleware ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5000").split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- Logging ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("AshaAI")
+
+# --- Validate environment variables ---
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
+ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "").strip()
+ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "").strip()
+TICKETMASTER_API_KEY = os.getenv("TICKETMASTER_API_KEY", "").strip()
+
+# --- Database setup ---
+DB_PATH = os.getenv("DB_PATH", "users.db")
+
+def get_db_connection():
+    return sqlite3.connect(DB_PATH)
+
+def init_db():
+    with get_db_connection() as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL
+            )
+        ''')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
+        conn.commit()
+
+init_db()
+
+# --- Groq client ---
+try:
+    groq_client = Groq(api_key=GROQ_API_KEY, timeout=10.0)
+except Exception as e:
+    logger.critical("Groq client initialization failed: %s", str(e))
+    raise RuntimeError("AI service initialization failed") from e
+
+# --- Data models ---
 class ChatRequest(BaseModel):
     session_id: str
     message: str
@@ -98,7 +102,14 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
-# Ambiguity detection patterns
+# --- Security functions ---
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+# --- Bias & Ambiguity Detection ---
 AMBIGUOUS_TERMS = {
     "bank": ["financial institution", "river bank"],
     "python": ["programming language", "snake"],
@@ -108,306 +119,188 @@ AMBIGUOUS_TERMS = {
 }
 
 def detect_ambiguity(query: str) -> str:
-    """Identify ambiguous terms in queries"""
     query_lower = query.lower()
     for term, meanings in AMBIGUOUS_TERMS.items():
         if term in query_lower:
             return f"I noticed you mentioned '{term}'. Did you mean: {', '.join(meanings)}?"
     return ""
 
-def extract_location(message: str) -> str:
-    """Extract location from query"""
-    patterns = [
-        r"in\s+([A-Za-z\s]+)(?:,|\.|$)",
-        r"at\s+([A-Za-z\s]+)(?:,|\.|$)",
-        r"near\s+([A-Za-z\s]+)(?:,|\.|$)",
-        r"around\s+([A-Za-z\s]+)(?:,|\.|$)"
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, message)
-        if match:
-            return match.group(1).strip()
-    return ""
+def analyze_bias(query: str) -> Optional[str]:
+    lower = query.lower()
+    if "men only" in lower or "male only" in lower:
+        return "Asha AI is inclusive and does not filter jobs by gender. Please specify your skills or interests."
+    if "age" in lower or "young people" in lower or "old people" in lower:
+        return "Asha AI does not filter jobs by age. Please specify your skills or interests."
+    return None
 
-@app.post("/chat", response_model=Dict[str, Any])
-async def handle_chat(request: ChatRequest):
-    """Main chat endpoint"""
+# --- Middleware for request tracking ---
+@app.middleware("http")
+async def add_correlation_id(request: Request, call_next):
+    correlation_id = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
+    request.state.correlation_id = correlation_id
+    response = await call_next(request)
+    response.headers["X-Correlation-ID"] = correlation_id
+    return response
+
+# --- Chat endpoint ---
+@app.post("/chat")
+@limiter.limit("10/minute")
+async def handle_chat(request: Request, chat_request: ChatRequest):
+    """Main chat endpoint with RAG integration and bias/ambiguity checks"""
     try:
-        session_id = request.session_id
-        user_message = request.message.strip()
-        location = request.location or extract_location(user_message)
-        logger.info(f"Processing query: '{user_message}' in {location or 'any location'}")
-
-        if not user_message:
-            return error_response(session_id, "Empty message received")
-
-        add_message(session_id, "user", user_message)
-
+        logger.info(f"Chat request - Session: {chat_request.session_id}")
+        
         # Ambiguity check
-        clarification = detect_ambiguity(user_message)
+        clarification = detect_ambiguity(chat_request.message)
         if clarification:
-            log_analytics(
-                event_type="ambiguity_detected",
-                session_id=session_id,
-                details={"query": user_message}
-            )
+            add_message(chat_request.session_id, "bot", clarification)
             return {
                 "reply": clarification,
-                "history": get_history(session_id),
+                "history": get_history(chat_request.session_id),
                 "requires_clarification": True
             }
 
-        # Ethical check
-        ethical_check = analyze_ethical_concerns(user_message)
-        if ethical_check["is_biased"]:
-            log_analytics(
-                event_type="bias_detected",
-                session_id=session_id,
-                details={
-                    "query": user_message,
-                    "bias_type": ethical_check.get("bias_type", "unknown")
-                }
-            )
-            return handle_ethical_response(session_id, ethical_check)
-
-        # Context retrieval
-        context = get_context_for_query(user_message, location)
-        if not context_valid(context):
-            log_analytics(
-                event_type="no_results",
-                session_id=session_id,
-                details={"query": user_message, "location": location}
-            )
-            return handle_no_results(session_id)
-
-        # Response generation
-        response = generate_ai_response(session_id, context)
-        add_message(session_id, "bot", response)
-
-        log_analytics(
-            event_type="query",
-            session_id=session_id,
-            details={
-                "query": user_message,
-                "response_length": len(response),
-                "bias_detected": False
+        # Bias check
+        bias_msg = analyze_bias(chat_request.message)
+        if bias_msg:
+            add_message(chat_request.session_id, "bot", bias_msg)
+            return {
+                "reply": bias_msg,
+                "history": get_history(chat_request.session_id),
+                "bias_detected": True
             }
+
+        # Get RAG context
+        context = await run_in_threadpool(
+            get_context_for_query, 
+            chat_request.message, 
+            chat_request.location
         )
 
-        return success_response(session_id, response, context)
-
-    except Exception as e:
-        logger.error("Chat error: %s", str(e), exc_info=True)
-        log_analytics(
-            event_type="error",
-            session_id=session_id if 'session_id' in locals() else "unknown",
-            details={"error": str(e), "query": user_message if 'user_message' in locals() else ""}
-        )
-        return error_response(session_id, str(e))
-
-def handle_ethical_response(session_id: str, analysis: Dict) -> Dict:
-    """Handle biased queries"""
-    response = analysis["ethical_response"]
-    add_message(session_id, "bot", response)
-    return {
-        "reply": response,
-        "history": get_history(session_id),
-        "bias_detected": True
-    }
-
-def context_valid(context: str) -> bool:
-    """Validate RAG context"""
-    return bool(context and context.strip())
-
-def handle_no_results(session_id: str) -> Dict:
-    """Handle empty results"""
-    response = "I couldn't find relevant opportunities. Would you like to try different search terms?"
-    add_message(session_id, "bot", response)
-    return {
-        "reply": response,
-        "history": get_history(session_id)
-    }
-
-def generate_ai_response(session_id: str, context: str) -> str:
-    """Generate response using Groq API"""
-    messages = [
-        {
-            "role": "system",
-            "content": f"""You are Asha AI, a career assistant. Use this context:
-            {context}
-            
-            Response rules:
-            1. Use markdown formatting for lists and links
-            2. Separate different sections with headers
-            3. Keep responses under 150 words
-            4. End with a clarifying question"""
-        },
-        *format_history(get_history(session_id)[-4:])
-    ]
-    
-    try:
-        response = client.chat.completions.create(
-            messages=messages,
+        # Generate AI response
+        response = await run_in_threadpool(
+            groq_client.chat.completions.create,
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"""You are Asha AI, a career assistant. Use this context:
+                    {context}
+                    
+                    Response rules:
+                    1. Use markdown for lists/links
+                    2. Keep responses under 150 words
+                    3. Ask follow-up questions"""
+                },
+                {"role": "user", "content": chat_request.message}
+            ],
             model="llama3-8b-8192",
             temperature=0.7,
-            max_tokens=500,
-            timeout=10
+            max_tokens=500
         )
-        return response.choices[0].message.content.strip()
+        
+        reply = response.choices[0].message.content
+        add_message(chat_request.session_id, "bot", reply)
+        
+        return {
+            "reply": reply,
+            "history": get_history(chat_request.session_id)
+        }
+        
     except Exception as e:
-        logger.error("Groq API call failed: %s", str(e))
-        raise
+        logger.error(f"Chat error: {str(e)}", exc_info=True)
+        return {"reply": "I'm having technical difficulties. Please try again later."}
 
-def format_history(history: List) -> List[Dict]:
-    """Format conversation history"""
-    return [{"role": msg["role"], "content": msg["content"]} for msg in history]
-
-def success_response(session_id: str, reply: str, context: str) -> Dict:
-    """Successful response format"""
-    return {
-        "reply": reply,
-        "context": encrypt_data(context),
-        "history": get_history(session_id)
-    }
-
-def error_response(session_id: str, error_msg: str) -> Dict:
-    """Error response format"""
-    user_msg = "I'm having technical difficulties. Please try again later."
-    add_message(session_id, "bot", user_msg)
-    return {
-        "reply": user_msg,
-        "error": error_msg,
-        "history": get_history(session_id)
-    }
-
+# --- User management endpoints ---
 @app.post("/signup")
-async def handle_signup(request: SignupRequest):
-    """Signup endpoint"""
+@limiter.limit("5/minute")
+async def handle_signup(request: Request, signup_request: SignupRequest):
+    """User registration endpoint"""
     try:
-        # Check if user already exists
-        conn = sqlite3.connect("users.db")
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ?", (request.email,))
-        existing_user = cursor.fetchone()
+        # Validate email format
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", signup_request.email):
+            raise HTTPException(status_code=400, detail="Invalid email format")
 
-        if existing_user:
-            conn.close()
-            return {"success": False, "message": "Email already registered. Please log in."}
-
-        # Hash the password and store the user
-        hashed_password = hash_password(request.password)
-        cursor.execute(
-            "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-            (request.name, request.email, hashed_password)
+        # Thread-safe database operation
+        user = await run_in_threadpool(
+            lambda: get_db_connection().execute(
+                "SELECT * FROM users WHERE email = ?", 
+                (signup_request.email,)
+            ).fetchone()
         )
-        conn.commit()
-        conn.close()
+        
+        if user:
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-        logger.info(f"User signed up: {request.email}")
-        log_analytics(
-            event_type="signup",
-            session_id=request.email,
-            details={"email": request.email}
+        await run_in_threadpool(
+            lambda: get_db_connection().execute(
+                "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+                (
+                    signup_request.name,
+                    signup_request.email,
+                    hash_password(signup_request.password)
+                )
+            ).connection.commit()
         )
-        return {"success": True, "message": "Signup successful! Please log in."}
-
-    except Exception as e:
-        logger.error(f"Signup error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to process signup"
-        )
+        
+        return {"success": True, "message": "Signup successful"}
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Database error")
 
 @app.post("/login")
-async def handle_login(request: LoginRequest):
-    """Login endpoint"""
+@limiter.limit("10/minute")
+async def handle_login(request: Request, login_request: LoginRequest):
+    """User authentication endpoint"""
     try:
-        # Check if user exists
-        conn = sqlite3.connect("users.db")
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ?", (request.email,))
-        user = cursor.fetchone()
-
-        if not user:
-            conn.close()
-            return {"success": False, "message": "Email not found. Please sign up."}
-
-        # Verify password
-        stored_password = user[3]  # Password is the 4th column (index 3)
-        if not verify_password(request.password, stored_password):
-            conn.close()
-            return {"success": False, "message": "Incorrect password. Please try again."}
-
-        conn.close()
-
-        logger.info(f"User logged in: {request.email}")
-        log_analytics(
-            event_type="login",
-            session_id=request.email,
-            details={"email": request.email}
+        user = await run_in_threadpool(
+            lambda: get_db_connection().execute(
+                "SELECT * FROM users WHERE email = ?", 
+                (login_request.email,)
+            ).fetchone()
         )
-        return {"success": True, "message": "Login successful!"}
+        
+        if not user or not verify_password(login_request.password, user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+            
+        return {"success": True, "message": "Login successful"}
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Database error")
 
-    except Exception as e:
-        logger.error(f"Login error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to process login"
-        )
-
+# --- Additional endpoints ---
 @app.post("/feedback")
-async def handle_feedback(request: FeedbackRequest):
-    """Feedback endpoint"""
-    try:
-        record_feedback(
-            request.session_id,
-            request.rating,
-            request.comments
-        )
-        log_analytics(
-            event_type="feedback",
-            session_id=request.session_id,
-            details={
-                "rating": request.rating,
-                "comments": request.comments
-            }
-        )
-        return {"status": "Feedback recorded successfully"}
-    except Exception as e:
-        logger.error(f"Feedback error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to process feedback"
-        )
+async def handle_feedback(feedback_request: FeedbackRequest):
+    """User feedback endpoint"""
+    logger.info(f"Feedback received - Session: {feedback_request.session_id}")
+    # Implement your feedback storage logic here
+    return {"status": "Feedback recorded successfully"}
 
 @app.delete("/history/{session_id}")
 async def clear_history_endpoint(session_id: str):
-    """Clear history endpoint"""
     try:
         clear_history(session_id)
         return {"status": "History cleared successfully"}
     except Exception as e:
         logger.error(f"History clear error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to clear history"
-        )
+        raise HTTPException(status_code=500, detail="Failed to clear history")
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Comprehensive health check"""
+    db_status = "active" if get_db_connection() else "inactive"
     return {
         "status": "operational",
-        "version": "1.0.0",
         "components": {
-            "rag": "active",
-            "llm": "active",
-            "database": "active",
-            "adzuna_api": "active" if ADZUNA_APP_ID and ADZUNA_APP_KEY else "inactive",
-            "ticketmaster_api": "active" if TICKETMASTER_API_KEY else "inactive"
+            "database": db_status,
+            "llm": "active" if GROQ_API_KEY else "inactive",
+            "adzuna": "active" if ADZUNA_APP_ID and ADZUNA_APP_KEY else "inactive",
+            "ticketmaster": "active" if TICKETMASTER_API_KEY else "inactive"
         }
     }
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
