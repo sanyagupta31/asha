@@ -1,7 +1,4 @@
-Of course! 🚀  
-Here’s a **professional, clean `README.md`** you can directly put on GitHub for your **Asha AI Bot** project:
 
----
 
 # Asha AI Bot 🤖✨
 
