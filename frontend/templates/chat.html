@@ -7,78 +7,52 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        :root {
-            --primary-color: #6d2177;
-            --secondary-color: #ff69b4;
-            --light-pink: #f7d3e3;
-            --lighter-pink: #fef0f8;
-            --white: #ffffff;
-            --dark-text: #333333;
-            --light-text: #555555;
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #fef8fc;
-            color: var(--dark-text);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            color: #333;
+            margin: 0;
+            padding: 0;
         }
-        
         .navbar {
-        background-color: #f7d3e3;
-        padding: 1rem 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+            background-color: #f7d3e3;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .navbar a {
             color: #6d2177;
             text-decoration: none;
             font-weight: 600;
             margin-left: 1rem;
+            outline: none;
         }
-        
+        .navbar a:focus {
+            outline: 2px solid #ff69b4;
+        }
         .logo {
             font-size: 1.5rem;
             font-weight: 700;
-            color: var(--primary-color);
-            cursor: pointer;
-            transition: all 0.3s ease;
+            color: #6d2177;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        
-        .logo:hover {
-            color: var(--secondary-color);
-            transform: scale(1.05);
-        }
-        
         .chat-header {
-            background-color: var(--light-pink);
+            background-color: #f7d3e3;
             padding: 1.2rem;
             text-align: center;
             font-size: 1.5rem;
-            color: var(--primary-color);
+            color: #6d2177;
             font-weight: 700;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        
         .chat-container {
             display: flex;
             flex-direction: column;
-            height: 100%;
+            height: 100vh;
         }
-        
         .chat-window {
             flex: 1;
             padding: 1.5rem;
@@ -86,353 +60,245 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            background-color: rgba(247, 211, 227, 0.2);
+            background-color: #fef0f8;
         }
-        
         .chat-input-area {
             display: flex;
             padding: 1.2rem;
-            background-color: var(--white);
+            background-color: #fff;
             position: sticky;
             bottom: 0;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
-        
         .chat-input-area input {
             flex: 1;
             padding: 0.8rem 1.2rem;
-            border: 2px solid var(--light-pink);
+            border: 2px solid #f7d3e3;
             border-radius: 30px;
             font-size: 1rem;
             outline: none;
-            transition: all 0.3s ease;
+            transition: border-color 0.3s;
         }
-        
         .chat-input-area input:focus {
-            border-color: var(--secondary-color);
+            border-color: #ff69b4;
             box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.2);
         }
-        
         .chat-input-area button {
-            background-color: var(--secondary-color);
+            background-color: #ff69b4;
             border: none;
             padding: 0.8rem 1.8rem;
             margin-left: 1rem;
-            color: var(--white);
+            color: #fff;
             border-radius: 30px;
             font-size: 1rem;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.1);
+            transition: background 0.3s;
         }
-        
+        .chat-input-area button:focus {
+            outline: 2px solid #6d2177;
+        }
         .chat-input-area button:hover {
             background-color: #ff1493;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4);
         }
-        
         .chat-message {
             padding: 1.2rem;
             border-radius: 18px;
             max-width: 85%;
             word-wrap: break-word;
             position: relative;
-            animation: fadeIn 0.3s ease forwards;
             opacity: 0;
+            animation: fadeIn 0.3s ease forwards;
         }
-        
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-        
+        @keyframes fadeIn { to { opacity: 1; } }
         .user-message {
-            background-color: var(--secondary-color);
-            color: var(--white);
+            background-color: #ff69b4;
+            color: #fff;
             margin-left: auto;
             border-bottom-right-radius: 5px;
-            box-shadow: 0 4px 10px rgba(255, 105, 180, 0.3);
         }
-        
         .bot-message {
-            background-color: var(--white);
-            color: var(--dark-text);
+            background-color: #fff;
+            color: #333;
             margin-right: auto;
             border-bottom-left-radius: 5px;
-            box-shadow: var(--shadow);
         }
-        
         .message-time {
             font-size: 0.7rem;
             opacity: 0.7;
             margin-top: 0.5rem;
             text-align: right;
         }
-        
         .typing-indicator {
             display: none;
             padding: 1rem;
-            color: var(--light-text);
+            color: #555;
             font-style: italic;
             text-align: left;
-            animation: pulse 1.5s infinite;
         }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
+        .typing-indicator[aria-live="polite"] {
+            display: block;
         }
-        
-        .typing-indicator span {
-            display: inline-block;
-            animation: bounce 1.5s infinite;
+        .error-message {
+            color: #d32f2f;
+            background: #ffebee;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
         }
-        
-        .typing-indicator span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        
-        .typing-indicator span:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
-        
-        /* Responsive Styles */
         @media (max-width: 768px) {
-            .navbar {
-                padding: 1rem;
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .navbar-links {
-                display: flex;
-                gap: 1rem;
-            }
-            
-            .chat-header {
-                padding: 1rem;
-                font-size: 1.3rem;
-            }
-            
-            .chat-window {
-                padding: 1rem;
-            }
-            
-            .chat-input-area {
-                padding: 1rem;
-            }
-            
-            .chat-input-area input {
-                padding: 0.7rem 1rem;
-            }
-            
-            .chat-input-area button {
-                padding: 0.7rem 1.5rem;
-            }
-            
-            .chat-message {
-                max-width: 90%;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .navbar-links {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            
-            .navbar a {
-                margin: 0.5rem;
-                font-size: 0.9rem;
-            }
-            
-            .chat-header {
-                font-size: 1.2rem;
-            }
-            
-            .chat-input-area {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .chat-input-area button {
-                margin-left: 0;
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .chat-message {
-                padding: 1rem;
-                max-width: 95%;
-            }
-        }
-        
-        /* Markdown styling */
-        .bot-message strong {
-            color: var(--primary-color);
-        }
-        
-        .bot-message em {
-            color: var(--secondary-color);
-            font-style: italic;
-        }
-        
-        .bot-message a {
-            color: var(--secondary-color);
-            text-decoration: none;
-            font-weight: 500;
-            border-bottom: 1px dotted var(--secondary-color);
-            transition: all 0.2s ease;
-        }
-        
-        .bot-message a:hover {
-            color: #ff1493;
-            border-bottom: 1px solid #ff1493;
-        }
-        
-        .bot-message ul, .bot-message ol {
-            margin: 0.5rem 0 0.5rem 1.5rem;
+            .chat-header { font-size: 1.2rem; }
+            .chat-window { padding: 1rem; }
+            .chat-input-area { padding: 1rem; }
+            .chat-message { max-width: 95%; }
         }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <div class="logo">
-            <span>Asha AI 🎀🤖</span>
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="logo" tabindex="0">
+            <span>Asha AI <span aria-label="ribbon and robot emoji" role="img">🎀🤖</span></span>
         </div>
-        <div class="navbar-links">
-            <a href="/"><i class="fas fa-home"></i> Home</a>
-            <a href="/chat"><i class="fas fa-comments"></i> Chat with Asha</a>
-            <a href="/faq"><i class="fas fa-question-circle"></i> FAQ</a>
+        <div class="navbar-links" role="toolbar" aria-label="Main navigation">
+            <a href="/" tabindex="0"><i class="fas fa-home" aria-hidden="true"></i> Home</a>
+            <a href="/chat" tabindex="0"><i class="fas fa-comments" aria-hidden="true"></i> Chat with Asha</a>
+            <a href="/faq" tabindex="0"><i class="fas fa-question-circle" aria-hidden="true"></i> FAQ</a>
         </div>
-    </div>
+    </nav>
     
-    <div class="chat-container">
-        <div class="chat-header">Chat with Asha</div>
-        
-        <div class="chat-window" id="chatWindow">
+    <main class="chat-container" aria-label="Chat with Asha">
+        <div class="chat-header" id="chatHeader">Chat with Asha</div>
+        <div class="chat-window" id="chatWindow" aria-live="polite" aria-atomic="false" tabindex="0">
             <div class="chat-message bot-message" style="opacity: 1;">
-                👋 Hello! I'm Asha. Tell me what you're looking for — jobs, mentorships, or events. Let's get started!
+                👋 Hello! I'm Asha. Tell me what you're looking for - jobs, mentorships, or events. Let's get started!
                 <div class="message-time">Just now</div>
             </div>
-            <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-indicator" id="typingIndicator" aria-live="polite" aria-label="Asha is typing" style="display: none;">
                 <span>Asha is typing</span>
-                <span>.</span>
-                <span>.</span>
-                <span>.</span>
+                <span aria-hidden="true">.</span>
+                <span aria-hidden="true">.</span>
+                <span aria-hidden="true">.</span>
             </div>
         </div>
 
-        <div class="chat-input-area">
-            <input type="text" id="userInput" placeholder="Type your message here..." 
-                   onkeypress="handleKeyPress(event)" autocomplete="off">
-            <button onclick="sendMessage()">
-                <i class="fas fa-paper-plane"></i> Send
+        <form class="chat-input-area" id="chatForm" autocomplete="off" aria-label="Send a message to Asha">
+            <input type="text" id="userInput" placeholder="Type your message here..." aria-label="Type your message" autocomplete="off" required>
+            <button type="submit" aria-label="Send message">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i> Send
             </button>
-        </div>
-    </div>
+        </form>
+    </main>
 
     <script>
-        const sessionId = "{{ session_id }}";  
-        
-        // Get current time in HH:MM format
+        // If using Flask/Jinja2 template, session_id will be injected
+        const sessionId = "{{ session_id }}" || (Date.now().toString());
+
         function getCurrentTime() {
             const now = new Date();
             return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
-        
+
+        // Accessibility: focus management
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                document.getElementById('userInput').focus();
+            }
+        });
+
+        // Keyboard accessibility for input and send
+        document.getElementById('chatForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            sendMessage();
+        });
+
         function handleKeyPress(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 sendMessage();
             }
         }
-        
+
+        document.getElementById('userInput').addEventListener('keydown', handleKeyPress);
+
         function sendMessage() {
             const userInput = document.getElementById('userInput');
             const chatWindow = document.getElementById('chatWindow');
             const typingIndicator = document.getElementById('typingIndicator');
             const message = userInput.value.trim();
-            
+
             if (message === '') return;
-            
-            // Add user message
+
             addMessage('user', message);
             userInput.value = '';
-            
-            // Show typing indicator
+            userInput.setAttribute('aria-busy', 'true');
             typingIndicator.style.display = 'block';
             chatWindow.scrollTop = chatWindow.scrollHeight;
-            
-            // Send to backend
+
             fetch('/api/chat', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     session_id: sessionId,
                     message: message
                 })
             })
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
             })
             .then(data => {
                 typingIndicator.style.display = 'none';
+                userInput.setAttribute('aria-busy', 'false');
                 if (data.reply) {
                     addMessage('bot', data.reply);
                 } else if (data.error) {
-                    addMessage('bot', "Sorry, I encountered an error. Please try again.");
+                    showError("Sorry, I encountered an error. Please try again.");
                     console.error(data.error);
                 }
             })
             .catch(error => {
                 typingIndicator.style.display = 'none';
-                addMessage('bot', "Sorry, I'm having trouble connecting. Please try again later.");
+                userInput.setAttribute('aria-busy', 'false');
+                showError("Sorry, I'm having trouble connecting. Please try again later.");
                 console.error('Error:', error);
             });
         }
-        
+
         function addMessage(sender, message) {
             const chatWindow = document.getElementById('chatWindow');
             const messageDiv = document.createElement('div');
-            
-            messageDiv.className = chat-message ${sender}-message;
-            messageDiv.innerHTML = formatMessage(message) + 
-                                 <div class="message-time">${getCurrentTime()}</div>;
-            
+            messageDiv.className = `chat-message ${sender}-message`;
+            messageDiv.innerHTML = formatMessage(message) +
+                `<div class="message-time">${getCurrentTime()}</div>`;
             chatWindow.insertBefore(messageDiv, document.getElementById('typingIndicator'));
-            
-            // Trigger animation
-            setTimeout(() => {
-                messageDiv.style.opacity = '1';
-            }, 10);
-            
+            setTimeout(() => { messageDiv.style.opacity = '1'; }, 10);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
-        
+
+        function showError(msg) {
+            const chatWindow = document.getElementById('chatWindow');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.setAttribute('role', 'alert');
+            errorDiv.textContent = msg;
+            chatWindow.appendChild(errorDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
         function formatMessage(message) {
             // Simple markdown to HTML conversion
             return message
-                .replace(/\\(.?)\\*/g, '<strong>$1</strong>')  // Bold
-                .replace(/\(.?)\*/g, '<em>$1</em>')  // Italic
-                .replace(/\[(.?)\]\((.?)\)/g, '<a href="$2" target="_blank">$1</a>')  // Links
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')              // Italic
+                .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')  // Links
                 .replace(/\n/g, '<br>');  // New lines
         }
-        
+
         // Auto-focus input on page load
         window.onload = function() {
             document.getElementById('userInput').focus();
