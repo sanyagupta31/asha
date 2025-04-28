@@ -5,7 +5,7 @@ import uuid
 app = Flask(__name__)  # Fixed: Changed _name_ to __name__
 
 # Backend link
-BACKEND_URL = "http://localhost:8000"  
+BACKEND_URL = "https://asha-ai-backend.onrender.com"  
 
 @app.route('/')
 def home():
