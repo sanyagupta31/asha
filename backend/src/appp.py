@@ -133,6 +133,9 @@ def analyze_bias(query: str) -> Optional[str]:
         return "Asha AI does not filter jobs by age. Please specify your skills or interests."
     return None
 
+@app.get("/")
+async def index():
+    return "Asha's backend working."
 # --- Middleware for request tracking ---
 @app.middleware("http")
 async def add_correlation_id(request: Request, call_next):
@@ -302,5 +305,5 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=5000)
 
