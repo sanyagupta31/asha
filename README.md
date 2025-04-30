@@ -1,6 +1,9 @@
 Asha AI Bot 🤖✨
+---
+
 Asha AI is a conversational assistant designed for women’s career empowerment, developed for the JobsForHer Foundation.
 It provides real-time access to job listings, events, mentorship programs, and more — powered by Retrieval-Augmented Generation (RAG), ethical AI principles, and Indian-contextual awareness.
+---
 
 🚀 Features
 🗣️ Multi-turn conversations with session management
@@ -93,22 +96,22 @@ Advanced Bias Detection: Implementing ML models for more sophisticated bias dete
 User Authentication: Adding profile management and login functionality
 
 Offline Caching: Enable offline access to job/event data
-
+---
 🤝 Contribution
 Contributions are welcome! Please open an issue to discuss major changes before submitting a pull request.
-
+---
 📄 License
 This project is licensed under the MIT License.
-
+---
 🌟 Acknowledgments
 JobsForHer Foundation for supporting women’s career development
 
 Adzuna and Ticketmaster for their powerful APIs
 
 The open-source community for inspiration and tools
-
+---
 🔥 Empowering Careers, One Chat at a Time!
-"Conversational AI bot for women's career empowerment, developed by Sanya Gupta and Sania."
+"Conversational AI bot for women's career empowerment"
 
 
 
