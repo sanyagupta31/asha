@@ -11,8 +11,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code and data from 'backend' folder
-COPY ./backend ./src  # Map 'backend' to '/app/src'
-COPY ./backend/data /app/data  # Copy 'data' folder from 'backend' to '/app/data'
+COPY ./ ./src  # Map the entire 'backend' folder to '/app/src'
+COPY ./data /app/data  # Copy 'data' folder to '/app/data'
 
 # Command to run the application
 CMD ["uvicorn", "src.ragi:app", "--host", "0.0.0.0", "--port", "8000"]
