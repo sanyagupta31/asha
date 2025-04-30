@@ -11,4 +11,4 @@ RUN python -m spacy download en_core_web_sm
 COPY src ./src
 COPY data /app/data
 
-CMD ["uvicorn", "src.ragi:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.appp:app", "--host", "0.0.0.0", "--port", "8000"]
