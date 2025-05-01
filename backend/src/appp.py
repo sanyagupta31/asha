@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, status, Request, Depends, Background
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from typing import Optional
 import os
 import logging
 import re
@@ -48,17 +48,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger("AshaAI")
 
-# --- Validate environment variables ---
+# --- Environment variable checks ---
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
-ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "").strip()
-ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "").strip()
-TICKETMASTER_API_KEY = os.getenv("TICKETMASTER_API_KEY", "").strip()
 
 # --- Database setup ---
 DB_PATH = os.getenv("DB_PATH", "users.db")
 
 def get_db_connection():
-    return sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def init_db():
     with get_db_connection() as conn:
@@ -68,6 +67,14 @@ def init_db():
                 name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL,
+                rating TEXT NOT NULL,
+                comments TEXT
             )
         ''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
@@ -82,7 +89,7 @@ except Exception as e:
     logger.critical("Groq client initialization failed: %s", str(e))
     raise RuntimeError("AI service initialization failed") from e
 
-# --- Data models ---
+# --- Models ---
 class ChatRequest(BaseModel):
     session_id: str
     message: str
@@ -102,7 +109,7 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
-# --- Security functions ---
+# --- Security ---
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -137,7 +144,6 @@ def analyze_bias(query: str) -> Optional[str]:
 async def index():
     return "Asha's backend working."
 
-# --- Middleware for request tracking ---
 @app.middleware("http")
 async def add_correlation_id(request: Request, call_next):
     correlation_id = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
@@ -150,11 +156,9 @@ async def add_correlation_id(request: Request, call_next):
 @app.post("/chat")
 @limiter.limit("10/minute")
 async def handle_chat(request: Request, chat_request: ChatRequest):
-    """Main chat endpoint with RAG integration and bias/ambiguity checks"""
     try:
         logger.info(f"Chat request - Session: {chat_request.session_id}")
         
-        # Ambiguity check
         clarification = detect_ambiguity(chat_request.message)
         if clarification:
             add_message(chat_request.session_id, "bot", clarification)
@@ -164,7 +168,6 @@ async def handle_chat(request: Request, chat_request: ChatRequest):
                 "requires_clarification": True
             }
 
-        # Bias check
         bias_msg = analyze_bias(chat_request.message)
         if bias_msg:
             add_message(chat_request.session_id, "bot", bias_msg)
@@ -174,24 +177,12 @@ async def handle_chat(request: Request, chat_request: ChatRequest):
                 "bias_detected": True
             }
 
-        # Get RAG context
-        context = await run_in_threadpool(
-            get_context_for_query, 
-            chat_request.message, 
-            chat_request.location
-        )
+        context = await run_in_threadpool(get_context_for_query, chat_request.message, chat_request.location)
 
-        # Generate AI response
         response = await run_in_threadpool(
             groq_client.chat.completions.create,
             messages=[ 
-                {"role": "system", "content": f"""You are Asha AI, a career assistant. Use this context:
-                {context}
-                
-                Response rules:
-                1. Use markdown for lists/links
-                2. Keep responses under 150 words
-                3. Ask follow-up questions"""}, 
+                {"role": "system", "content": f"""You are Asha AI, a career assistant. Use this context:\n{context}\n\nResponse rules:\n1. Use markdown for lists/links\n2. Keep responses under 150 words\n3. Ask follow-up questions"""}, 
                 {"role": "user", "content": chat_request.message}
             ],
             model="llama3-8b-8192",
@@ -211,55 +202,43 @@ async def handle_chat(request: Request, chat_request: ChatRequest):
         logger.error(f"Chat error: {str(e)}", exc_info=True)
         return {"reply": "I'm having technical difficulties. Please try again later."}
 
-# --- User management endpoints ---
+# --- Signup endpoint ---
 @app.post("/signup")
 @limiter.limit("5/minute")
 async def handle_signup(request: Request, signup_request: SignupRequest):
-    """User registration endpoint"""
     try:
-        # Validate email format
         if not re.match(r"[^@]+@[^@]+\.[^@]+", signup_request.email):
             raise HTTPException(status_code=400, detail="Invalid email format")
 
-        # Thread-safe database operation
-        user = await run_in_threadpool(
-            lambda: get_db_connection().execute(
-                "SELECT * FROM users WHERE email = ?", 
-                (signup_request.email,)
-            ).fetchone()
-        )
-        
-        if user:
-            raise HTTPException(status_code=400, detail="Email already registered")
-
-        await run_in_threadpool(
-            lambda: get_db_connection().execute(
-                "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-                (
-                    signup_request.name,
-                    signup_request.email,
-                    hash_password(signup_request.password)
+        def signup_user():
+            with get_db_connection() as conn:
+                existing = conn.execute("SELECT * FROM users WHERE email = ?", (signup_request.email,)).fetchone()
+                if existing:
+                    raise HTTPException(status_code=400, detail="Email already registered")
+                conn.execute(
+                    "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+                    (signup_request.name, signup_request.email, hash_password(signup_request.password))
                 )
-            ).connection.commit()
-        )
-        
+                conn.commit()
+
+        await run_in_threadpool(signup_user)
         return {"success": True, "message": "Signup successful"}
         
     except sqlite3.Error as e:
         logger.error(f"Database error: {str(e)}")
         raise HTTPException(status_code=500, detail="Database error")
 
+# --- Login endpoint ---
 @app.post("/login")
 @limiter.limit("10/minute")
 async def handle_login(request: Request, login_request: LoginRequest):
-    """User authentication endpoint"""
     try:
-        user = await run_in_threadpool(
-            lambda: get_db_connection().execute(
-                "SELECT * FROM users WHERE email = ?", 
-                (login_request.email,)
-            ).fetchone()
-        )
+        def login_user():
+            with get_db_connection() as conn:
+                user = conn.execute("SELECT * FROM users WHERE email = ?", (login_request.email,)).fetchone()
+                return user
+
+        user = await run_in_threadpool(login_user)
         
         if not user or not verify_password(login_request.password, user["password_hash"]):
             raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -270,7 +249,17 @@ async def handle_login(request: Request, login_request: LoginRequest):
         logger.error(f"Database error: {str(e)}")
         raise HTTPException(status_code=500, detail="Database error")
 
-# --- Additional endpoints ---
+# --- Feedback endpoint ---
 @app.post("/feedback")
 async def handle_feedback(feedback_request: FeedbackRequest):
-    """User feedback endpoint
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO feedback (session_id, rating, comments) VALUES (?, ?, ?)",
+                (feedback_request.session_id, feedback_request.rating, feedback_request.comments)
+            )
+            conn.commit()
+        return {"success": True, "message": "Thank you for your feedback!"}
+    except sqlite3.Error as e:
+        logger.error(f"Feedback DB error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not submit feedback")
