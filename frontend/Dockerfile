@@ -1,10 +1,10 @@
 FROM python:3.11-slim
 
 WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
 
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000"]
+# Install a simple web server
+RUN pip install --no-cache-dir httpserver
+
+# Serve frontend on port 5000
+CMD ["python", "-m", "http.server", "5000"]
