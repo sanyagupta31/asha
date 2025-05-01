@@ -14,10 +14,12 @@ def home():
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
     if request.method == 'POST':
-        # Handle post data here
+        user_message = request.form['message']  # Assuming the form sends a 'message' field
+        # You can process the message here or send it to your backend API
+        return jsonify({'reply': 'Message received', 'user_message': user_message})
     else:
-        # Handle GET request
         return render_template('chat.html')
+
 
 @app.route('/faq')
 def faq():
