@@ -1,0 +1,229 @@
+[
+  {
+    "timestamp": "2025-04-24T13:00:50.457527",
+    "event_type": "query",
+    "session_id": "test123",
+    "details": {
+      "query": "Hello",
+      "response_length": 615,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-24T17:35:06.164755",
+    "event_type": "query",
+    "session_id": "test123",
+    "details": {
+      "query": "Show me women in tech events in London",
+      "response_length": 849,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T10:22:01.764019",
+    "event_type": "query",
+    "session_id": "test123",
+    "details": {
+      "query": "Show me remote software jobs",
+      "response_length": 636,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T10:24:51.078830",
+    "event_type": "query",
+    "session_id": "test124",
+    "details": {
+      "query": "What women in tech events are upcoming?",
+      "response_length": 658,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T10:25:44.119327",
+    "event_type": "query",
+    "session_id": "test125",
+    "details": {
+      "query": "Tell me about mentorship programs",
+      "response_length": 696,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T10:26:44.764737",
+    "event_type": "bias_detected",
+    "session_id": "test126",
+    "details": {
+      "query": "Show me jobs for men only",
+      "bias_type": "gender_exclusionary"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T10:28:41.889956",
+    "event_type": "query",
+    "session_id": "test129",
+    "details": {
+      "query": "random nonsense 123!@#",
+      "response_length": 571,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:40:15.113448",
+    "event_type": "query",
+    "session_id": "test1",
+    "details": {
+      "query": "Show me remote software jobs",
+      "response_length": 453,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:40:31.685177",
+    "event_type": "query",
+    "session_id": "test2",
+    "details": {
+      "query": "What women in tech events are upcoming?",
+      "response_length": 610,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:40:39.614592",
+    "event_type": "query",
+    "session_id": "test3",
+    "details": {
+      "query": "Tell me about mentorship programs",
+      "response_length": 519,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:40:46.058622",
+    "event_type": "query",
+    "session_id": "test4",
+    "details": {
+      "query": "Find jobs in Bangalore",
+      "response_length": 644,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:40:46.412309",
+    "event_type": "bias_detected",
+    "session_id": "test5",
+    "details": {
+      "query": "Show me jobs for men only",
+      "bias_type": "gender_exclusionary"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:40:55.576952",
+    "event_type": "query",
+    "session_id": "test7",
+    "details": {
+      "query": "career workshop",
+      "response_length": 712,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:40:58.425387",
+    "event_type": "query",
+    "session_id": "test8",
+    "details": {
+      "query": "random nonsense 123!@#",
+      "response_length": 687,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:43:29.125770",
+    "event_type": "query",
+    "session_id": "test1",
+    "details": {
+      "query": "Show me remote software jobs",
+      "response_length": 910,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:43:46.217325",
+    "event_type": "query",
+    "session_id": "test2",
+    "details": {
+      "query": "What women in tech events are upcoming?",
+      "response_length": 503,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:43:56.122461",
+    "event_type": "query",
+    "session_id": "test3",
+    "details": {
+      "query": "Tell me about mentorship programs",
+      "response_length": 974,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:44:04.286183",
+    "event_type": "query",
+    "session_id": "test4",
+    "details": {
+      "query": "Find jobs in Bangalore",
+      "response_length": 764,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:44:06.428594",
+    "event_type": "bias_detected",
+    "session_id": "test5",
+    "details": {
+      "query": "Show me jobs for men only",
+      "bias_type": "gender_exclusionary"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:44:18.545356",
+    "event_type": "query",
+    "session_id": "test7",
+    "details": {
+      "query": "career workshop",
+      "response_length": 840,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:44:23.650713",
+    "event_type": "query",
+    "session_id": "test8",
+    "details": {
+      "query": "random nonsense 123!@#",
+      "response_length": 823,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:44:40.386144",
+    "event_type": "query",
+    "session_id": "test9",
+    "details": {
+      "query": "tech jobs in delhi",
+      "response_length": 812,
+      "bias_detected": false
+    }
+  },
+  {
+    "timestamp": "2025-04-25T11:44:46.874038",
+    "event_type": "query",
+    "session_id": "test10",
+    "details": {
+      "query": "software positions in bengaluru",
+      "response_length": 727,
+      "bias_detected": false
+    }
+  }
+]

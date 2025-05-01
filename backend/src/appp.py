@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from groq import Groq
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from src.ragi import get_context_for_query
+from ragi import get_context_for_query
 from src.context_manager import get_history, add_message, clear_history
 
 # --- Load environment variables ---
@@ -32,10 +32,15 @@ app = FastAPI(
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 
+origins = [
+    "http://127.0.0.1:5000",
+    "http://localhost:5000"
+]
+
 # --- CORS middleware ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "https://asha-ai-bot-63eo.onrender.com").split(","),
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
