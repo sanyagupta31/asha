@@ -1,14 +1,25 @@
-FROM python:3.11-slim@sha256:82c07f2f6e35255b92eb16f38dbd22679d5e8fb523064138d7c6468e7bf0c15b
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy from root context (since we’ll build from root)
-COPY backend/requirements.txt .
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc python3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first to leverage Docker cache
+COPY ./backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Download spaCy model
 RUN python -m spacy download en_core_web_sm
 
-COPY backend/src ./src
-COPY data ./data
+# Copy application code
+COPY ./backend/src ./src
 
-CMD ["uvicorn", "src.appp:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY ./data ./data
+
+# Expose port
+EXPOSE 10000
+
+# Run FastAPI with Uvicorn
+CMD ["uvicorn", "src.appp:app", "--host", "0.0.0.0", "--port", "10000"]
