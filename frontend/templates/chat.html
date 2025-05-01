@@ -239,7 +239,7 @@
             typingIndicator.style.display = 'block';
             chatWindow.scrollTop = chatWindow.scrollHeight;
 
-            fetch('/api/chat', {
+            fetch("https://asha-ai-backend.onrender.com",{
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
