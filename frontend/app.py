@@ -5,7 +5,7 @@ import uuid
 app = Flask(__name__)
 
 # Backend link
-BACKEND_URL = "https://asha-ai-backend.onrender.com"  # Ensure this is correct for your backend
+BACKEND_URL = "https://asha-3a9x.onrender.com"
 
 @app.route('/')
 def home():
@@ -14,8 +14,8 @@ def home():
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
     if request.method == 'POST':
-        user_message = request.form['message']  # Assuming the form sends a 'message' field
-        # You can process the message here or send it to your backend API
+        user_message = request.form['message']
+        
         return jsonify({'reply': 'Message received', 'user_message': user_message})
     else:
         return render_template('chat.html')
