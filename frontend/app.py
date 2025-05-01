@@ -2,10 +2,10 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import uuid
 
-app = Flask(__name__)  # Fixed: Changed _name_ to __name__
+app = Flask(__name__)
 
 # Backend link
-BACKEND_URL = "https://asha-ai-backend.onrender.com"  
+BACKEND_URL = "https://asha-ai-backend.onrender.com"  # Ensure this is correct for your backend
 
 @app.route('/')
 def home():
@@ -97,19 +97,5 @@ def proxy_login():
             'error': str(e)
         }), 502
 
-@app.route('/test-backend')
-def test_backend():
-    try:
-        response = requests.get('http://localhost:8000/health')
-        return jsonify({
-            'status': 'Backend connected successfully',
-            'backend_status': response.json()
-        })
-    except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'message': 'Backend connection failed'
-        }), 500
-
-if __name__ == '__main__':  # Fixed: Changed _main_ to __main__
+if __name__ == '__main__':
     app.run(debug=True, port=5000)
