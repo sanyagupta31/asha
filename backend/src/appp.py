@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status, Request, Depends
+from fastapi import FastAPI, HTTPException, status, Request, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
@@ -136,6 +136,7 @@ def analyze_bias(query: str) -> Optional[str]:
 @app.get("/")
 async def index():
     return "Asha's backend working."
+
 # --- Middleware for request tracking ---
 @app.middleware("http")
 async def add_correlation_id(request: Request, call_next):
@@ -183,17 +184,14 @@ async def handle_chat(request: Request, chat_request: ChatRequest):
         # Generate AI response
         response = await run_in_threadpool(
             groq_client.chat.completions.create,
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"""You are Asha AI, a career assistant. Use this context:
-                    {context}
-                    
-                    Response rules:
-                    1. Use markdown for lists/links
-                    2. Keep responses under 150 words
-                    3. Ask follow-up questions"""
-                },
+            messages=[ 
+                {"role": "system", "content": f"""You are Asha AI, a career assistant. Use this context:
+                {context}
+                
+                Response rules:
+                1. Use markdown for lists/links
+                2. Keep responses under 150 words
+                3. Ask follow-up questions"""}, 
                 {"role": "user", "content": chat_request.message}
             ],
             model="llama3-8b-8192",
@@ -275,35 +273,4 @@ async def handle_login(request: Request, login_request: LoginRequest):
 # --- Additional endpoints ---
 @app.post("/feedback")
 async def handle_feedback(feedback_request: FeedbackRequest):
-    """User feedback endpoint"""
-    logger.info(f"Feedback received - Session: {feedback_request.session_id}")
-    # Implement your feedback storage logic here
-    return {"status": "Feedback recorded successfully"}
-
-@app.delete("/history/{session_id}")
-async def clear_history_endpoint(session_id: str):
-    try:
-        clear_history(session_id)
-        return {"status": "History cleared successfully"}
-    except Exception as e:
-        logger.error(f"History clear error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to clear history")
-
-@app.get("/health")
-async def health_check():
-    """Comprehensive health check"""
-    db_status = "active" if get_db_connection() else "inactive"
-    return {
-        "status": "operational",
-        "components": {
-            "database": db_status,
-            "llm": "active" if GROQ_API_KEY else "inactive",
-            "adzuna": "active" if ADZUNA_APP_ID and ADZUNA_APP_KEY else "inactive",
-            "ticketmaster": "active" if TICKETMASTER_API_KEY else "inactive"
-        }
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)
-
+    """User feedback endpoint
