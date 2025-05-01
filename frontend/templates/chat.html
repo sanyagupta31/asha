@@ -165,84 +165,145 @@
             <span>Asha AI <span aria-label="ribbon and robot emoji" role="img">🎀🤖</span></span>
         </div>
         <div class="navbar-links" role="toolbar" aria-label="Main navigation">
-            <a href="/" tabindex="0">Home</a>
-            <a href="/faq" tabindex="0">FAQ</a>
-            <a href="/browse" tabindex="0">Browse</a>
-            <a href="/signup" tabindex="0">Sign Up</a>
-            <a href="/login" tabindex="0">Login</a>
+            <a href="/" tabindex="0"><i class="fas fa-home" aria-hidden="true"></i> Home</a>
+            <a href="/chat" tabindex="0"><i class="fas fa-comments" aria-hidden="true"></i> Chat with Asha</a>
+            <a href="/faq" tabindex="0"><i class="fas fa-question-circle" aria-hidden="true"></i> FAQ</a>
         </div>
     </nav>
-    <div class="chat-container">
-        <div class="chat-header">Chat with Asha AI</div>
-        <div class="chat-window" id="chat-window" role="region" aria-live="polite">
-            <div id="message-container"></div>
-            <div class="typing-indicator" id="typing-indicator" aria-live="polite">Typing...</div>
+    
+    <main class="chat-container" aria-label="Chat with Asha">
+        <div class="chat-header" id="chatHeader">Chat with Asha</div>
+        <div class="chat-window" id="chatWindow" aria-live="polite" aria-atomic="false" tabindex="0">
+            <div class="chat-message bot-message" style="opacity: 1;">
+                👋 Hello! I'm Asha. Tell me what you're looking for - jobs, mentorships, or events. Let's get started!
+                <div class="message-time">Just now</div>
+            </div>
+            <div class="typing-indicator" id="typingIndicator" aria-live="polite" aria-label="Asha is typing" style="display: none;">
+                <span>Asha is typing</span>
+                <span aria-hidden="true">.</span>
+                <span aria-hidden="true">.</span>
+                <span aria-hidden="true">.</span>
+            </div>
         </div>
-        <div class="chat-input-area">
-            <input type="text" id="user-input" placeholder="Ask something..." aria-label="Type your message" autofocus>
-            <button id="send-btn" aria-label="Send message"><i class="fas fa-paper-plane"></i> Send</button>
-        </div>
-    </div>
+
+        <form class="chat-input-area" id="chatForm" autocomplete="off" aria-label="Send a message to Asha">
+            <input type="text" id="userInput" placeholder="Type your message here..." aria-label="Type your message" autocomplete="off" required>
+            <button type="submit" aria-label="Send message">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i> Send
+            </button>
+        </form>
+    </main>
+
     <script>
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-btn');
-        const messageContainer = document.getElementById('message-container');
-        const typingIndicator = document.getElementById('typing-indicator');
-        const sessionID = Date.now().toString(); // Unique session ID
-        
-        const sendMessage = async (message) => {
-            if (!message.trim()) return;
+        // If using Flask/Jinja2 template, session_id will be injected
+        const sessionId = "{{ session_id }}" || (Date.now().toString());
 
-            // Add user message to the chat window
-            const userMessageElem = document.createElement('div');
-            userMessageElem.classList.add('chat-message', 'user-message');
-            userMessageElem.textContent = message;
-            messageContainer.appendChild(userMessageElem);
-            messageContainer.scrollTop = messageContainer.scrollHeight;
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
 
-            userInput.value = '';
-            typingIndicator.setAttribute('aria-live', 'polite');
-            
-            // Show typing indicator while waiting for bot reply
-            setTimeout(async () => {
-                try {
-                    const response = await fetch('/api/chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ session_id: sessionID, message: message })
-                    });
-
-                    const data = await response.json();
-
-                    // Hide typing indicator and display bot response
-                    typingIndicator.setAttribute('aria-live', 'off');
-                    const botMessageElem = document.createElement('div');
-                    botMessageElem.classList.add('chat-message', 'bot-message');
-                    botMessageElem.textContent = data.reply || 'Sorry, I could not process your request.';
-                    messageContainer.appendChild(botMessageElem);
-                    messageContainer.scrollTop = messageContainer.scrollHeight;
-                } catch (error) {
-                    typingIndicator.setAttribute('aria-live', 'off');
-                    const errorElem = document.createElement('div');
-                    errorElem.classList.add('error-message');
-                    errorElem.textContent = 'Something went wrong, please try again later.';
-                    messageContainer.appendChild(errorElem);
-                    messageContainer.scrollTop = messageContainer.scrollHeight;
-                }
-            }, 1000);
-        };
-
-        sendButton.addEventListener('click', () => {
-            const message = userInput.value;
-            sendMessage(message);
-        });
-
-        userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const message = userInput.value;
-                sendMessage(message);
+        // Accessibility: focus management
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                document.getElementById('userInput').focus();
             }
         });
+
+        // Keyboard accessibility for input and send
+        document.getElementById('chatForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            sendMessage();
+        });
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        document.getElementById('userInput').addEventListener('keydown', handleKeyPress);
+
+        function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const chatWindow = document.getElementById('chatWindow');
+            const typingIndicator = document.getElementById('typingIndicator');
+            const message = userInput.value.trim();
+
+            if (message === '') return;
+
+            addMessage('user', message);
+            userInput.value = '';
+            userInput.setAttribute('aria-busy', 'true');
+            typingIndicator.style.display = 'block';
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            fetch("https://asha-ai-backend.onrender.com",{
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    message: message
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                console.log('Response:', response.json());
+                return response.json();
+            })
+            .then(data => {
+                typingIndicator.style.display = 'none';
+                userInput.setAttribute('aria-busy', 'false');
+                if (data.reply) {
+                    addMessage('bot', data.reply);
+                } else if (data.error) {
+                    showError("Sorry, I encountered an error. Please try again.");
+                    console.error(data.error);
+                }
+            })
+            .catch(error => {
+                typingIndicator.style.display = 'none';
+                userInput.setAttribute('aria-busy', 'false');
+                showError("Sorry, I'm having trouble connecting. Please try again later.");
+                console.error('Error:', error);
+            });
+        }
+
+        function addMessage(sender, message) {
+            const chatWindow = document.getElementById('chatWindow');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = chat-message ${sender}-message;
+            messageDiv.innerHTML = formatMessage(message) +
+                <div class="message-time">${getCurrentTime()}</div>;
+            chatWindow.insertBefore(messageDiv, document.getElementById('typingIndicator'));
+            setTimeout(() => { messageDiv.style.opacity = '1'; }, 10);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function showError(msg) {
+            const chatWindow = document.getElementById('chatWindow');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.setAttribute('role', 'alert');
+            errorDiv.textContent = msg;
+            chatWindow.appendChild(errorDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function formatMessage(message) {
+            // Simple markdown to HTML conversion
+            return message
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')              // Italic
+                .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')  // Links
+                .replace(/\n/g, '<br>');  // New lines
+        }
+
+        // Auto-focus input on page load
+        window.onload = function() {
+            document.getElementById('userInput').focus();
+        };
     </script>
 </body>
 </html>
