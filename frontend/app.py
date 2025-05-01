@@ -11,10 +11,13 @@ BACKEND_URL = "https://asha-ai-backend.onrender.com"  # Ensure this is correct f
 def home():
     return render_template('index.html')
 
-@app.route('/chat')
+@app.route('/chat', methods=['GET', 'POST'])
 def chat():
-    session_id = str(uuid.uuid4())
-    return render_template('chat.html', session_id=session_id)
+    if request.method == 'POST':
+        # Handle post data here
+    else:
+        # Handle GET request
+        return render_template('chat.html')
 
 @app.route('/faq')
 def faq():
